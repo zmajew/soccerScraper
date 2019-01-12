@@ -68,9 +68,11 @@ func linkScrape(URL string) ([]Game, error) {
 			game.WinTeam2 = b.Competitors[1].Win
 			game.Draw = b.Draw
 		}
-
 		game.IsSuspended = b.IsSuspended
-
+		game.StartTime, err = time.Parse(time.RFC1123Z, b.OutcomeDateTime)
+		if err != nil {
+			return nil, err
+		}
 		gameSlice[i] = game
 	}
 	return gameSlice, nil
@@ -98,11 +100,13 @@ func main() {
 		panic(err)
 	}
 	for _, m := range matches {
-		fmt.Println(m.MatchName)
-		fmt.Println(m.Team1Name)
-		fmt.Println(m.Team2Name)
-		fmt.Println(m.WinTeam1)
-		fmt.Println(m.WinTeam2)
-		fmt.Println(m.Draw)
+		p := fmt.Println
+		p(m.MatchName)
+		p(m.Team1Name)
+		p(m.Team2Name)
+		p(m.WinTeam1)
+		p(m.WinTeam2)
+		p(m.Draw)
+		p(m.StartTime)
 	}
 }
