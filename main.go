@@ -1,14 +1,8 @@
 package main
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
-	"log"
-	"strings"
 	"time"
-
-	"github.com/PuerkitoBio/goquery"
 )
 
 // Game struct is created in purpose of demonstration of SoccerScraper function.
@@ -25,32 +19,6 @@ type Game struct {
 }
 
 // SoccerScraper pars only soccer/league pages on web www.ladbrokes.com.au
-func SoccerScraper(URL string) (Soccer, error) {
-	var data Soccer
-	doc, err := goquery.NewDocument(URL)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	var t string
-	doc.Find("script").Each(func(index int, item *goquery.Selection) {
-		scrpt := item
-		txt := scrpt.Text()
-		if len(txt) > 13 && txt[:14] == "Delegator.init" {
-			t = txt
-		}
-	})
-	t, err = trimJSON(t)
-	if err != nil {
-		return data, err
-	}
-
-	err = json.Unmarshal([]byte(t), &data)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	return data, nil
-}
 
 func examle(data Soccer) ([]Game, error) {
 	var game Game
@@ -79,24 +47,6 @@ func examle(data Soccer) ([]Game, error) {
 		gameSlice[i] = game
 	}
 	return gameSlice, nil
-}
-
-func trimJSON(a string) (string, error) {
-	a = strings.TrimPrefix(a, "Delegator.init(")
-	a = a[:len(a)-2]
-	a = strings.Replace(a, ",[]", "", -1) // Faulty field ",[]" ocures in json extracted from HTML
-	x := `"Category":"`
-	y := `"`
-	i := strings.Index(a, x)
-	if i == -1 {
-		return "", errors.New("page cannot be parsed")
-	}
-
-	b := a[i+len(x):]
-	j := strings.Index(b, y)
-	c := b[:j]
-
-	return strings.Replace(a, c, "League", 1), nil
 }
 
 func main() {

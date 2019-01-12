@@ -1,5 +1,14 @@
 package main
 
+import (
+	"encoding/json"
+	"errors"
+	"log"
+	"strings"
+
+	"github.com/PuerkitoBio/goquery"
+)
+
 type Payload struct {
 	Hash        string `json:"hash"`
 	InitPayload bool   `json:"initPayload"`
@@ -173,4 +182,49 @@ type Soccer struct {
 	ServerTime      int       `json:"serverTime"`
 	ServerTimestamp int       `json:"serverTimestamp"`
 	ServerTimezone  string    `json:"serverTimezone"`
+}
+
+func SoccerScraper(URL string) (Soccer, error) {
+	var data Soccer
+	doc, err := goquery.NewDocument(URL)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var t string
+	doc.Find("script").Each(func(index int, item *goquery.Selection) {
+		scrpt := item
+		txt := scrpt.Text()
+		if len(txt) > 13 && txt[:14] == "Delegator.init" {
+			t = txt
+		}
+	})
+	t, err = trimJSON(t)
+	if err != nil {
+		return data, err
+	}
+
+	err = json.Unmarshal([]byte(t), &data)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	return data, nil
+}
+
+func trimJSON(a string) (string, error) {
+	a = strings.TrimPrefix(a, "Delegator.init(")
+	a = a[:len(a)-2]
+	a = strings.Replace(a, ",[]", "", -1) // Faulty field ",[]" ocures in json extracted from HTML
+	x := `"Category":"`
+	y := `"`
+	i := strings.Index(a, x)
+	if i == -1 {
+		return "", errors.New("page cannot be parsed")
+	}
+
+	b := a[i+len(x):]
+	j := strings.Index(b, y)
+	c := b[:j]
+
+	return strings.Replace(a, c, "League", 1), nil
 }
