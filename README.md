@@ -1,0 +1,3 @@
+# soccerScraper
+
+Web scraping script.
