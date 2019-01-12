@@ -11,7 +11,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-// Game struct is created in purpose of demonstration of linkScrape function.
+// Game struct is created in purpose of demonstration of SoccerScraper function.
 // More deteiled struct can be obtained from source.
 type Game struct {
 	MatchName   string
@@ -24,10 +24,9 @@ type Game struct {
 	IsSuspended bool
 }
 
-var data Data
-
-func linkScrape(URL string) ([]Game, error) {
-
+// SoccerScraper pars only soccer/league pages on web www.ladbrokes.com.au
+func SoccerScraper(URL string) (Soccer, error) {
+	var data Soccer
 	doc, err := goquery.NewDocument(URL)
 	if err != nil {
 		log.Fatal(err)
@@ -43,14 +42,17 @@ func linkScrape(URL string) ([]Game, error) {
 	})
 	t, err = trimJSON(t)
 	if err != nil {
-		return nil, err
+		return data, err
 	}
 
 	err = json.Unmarshal([]byte(t), &data)
 	if err != nil {
 		log.Fatalln(err)
 	}
+	return data, nil
+}
 
+func examle(data Soccer) ([]Game, error) {
 	var game Game
 	gameSlice := make([]Game, len(data.Pay[0].Rows.Soccer.League.Matches))
 
@@ -69,10 +71,11 @@ func linkScrape(URL string) ([]Game, error) {
 			game.Draw = b.Draw
 		}
 		game.IsSuspended = b.IsSuspended
-		game.StartTime, err = time.Parse(time.RFC1123Z, b.OutcomeDateTime)
+		t, err := time.Parse(time.RFC1123Z, b.OutcomeDateTime)
 		if err != nil {
 			return nil, err
 		}
+		game.StartTime = t
 		gameSlice[i] = game
 	}
 	return gameSlice, nil
@@ -88,17 +91,25 @@ func trimJSON(a string) (string, error) {
 	if i == -1 {
 		return "", errors.New("page cannot be parsed")
 	}
+
 	b := a[i+len(x):]
 	j := strings.Index(b, y)
 	c := b[:j]
+
 	return strings.Replace(a, c, "League", 1), nil
 }
 
 func main() {
-	matches, err := linkScrape("https://www.ladbrokes.com.au/sports/soccer/69616684-football-australia-australian-a-league/")
+	m, err := SoccerScraper("https://www.ladbrokes.com.au/sports/soccer/69616684-football-australia-australian-a-league/")
 	if err != nil {
 		panic(err)
 	}
+
+	matches, err := examle(m)
+	if err != nil {
+		panic(err)
+	}
+
 	for _, m := range matches {
 		p := fmt.Println
 		p(m.MatchName)

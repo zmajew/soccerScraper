@@ -167,7 +167,7 @@ type Payload struct {
 	UUID        string `json:"uuid"`
 }
 
-type Data struct {
+type Soccer struct {
 	Modules         int       `json:"modules"`
 	Pay             []Payload `json:"payload"`
 	ServerTime      int       `json:"serverTime"`
